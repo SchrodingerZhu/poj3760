@@ -6,7 +6,7 @@
 #include <vector>
 #include <tr1/memory>
 #include <sstream>
-
+size_t M, N;
 using namespace  std::tr1;
 enum attackType{
 	subAttack = 0,
@@ -104,12 +104,22 @@ public:
 		temp += IntToString(No);
 		return temp;
 	}
+	void debug(){
+	    using std::cout;
+	    using std::endl;
+	    cout << endl;
+	    cout << "-------------------\n";
+        cout << getInfo() << endl;
+        cout << "E: " << elements << endl;
+        cout << "F: " << force << endl;
+        cout << "-------------------\n";
+	}
     friend dragon;
     friend bool isEnermy(color C, c_ptr hellc);
 };
 class place{
 protected:
-public:
+    int elements;
     std::vector<shared_ptr<character> > population;
     color flag;
 public:
@@ -123,11 +133,15 @@ private:
     int no;
     color lastWin;
 public:
+    city(int n){
+        no = n;
+        lastWin = none;
+        elements = 0;
+    }
     void recieve(c_ptr theC){
         population.push_back(shared_ptr<character>(theC));
         std::cout << InnerTimer << ' ';
         std::cout << theC ->getInfo();
-
         std::cout << " marched to city " << no <<" with "
              << theC->elements << " elements and force " << theC->force
              << std::endl;
@@ -138,7 +152,7 @@ public:
         population.erase(iter);
     }
     void recordWining(c_ptr winner){
-    	if(winner->belong == lastWin) {
+    	if(winner->belong == lastWin  && flag != lastWin) {
     		flag = winner -> belong;
     		std::cout << InnerTimer << ' '
     			 << ((flag == red)? "red " : "blue ")
@@ -154,12 +168,15 @@ public:
 
 
 };
-//bool isEnermy(color C ,c_ptr hellc){
-//	return hellc->belong != C;
-//}
 bool isOver = 0;
 class base : public place{
+    int genNo;
 public:
+    base(color F){
+        flag = F;
+        genNo = 0;
+        elements = M;
+    }
 	void recieve(c_ptr theC){
 		population.push_back(shared_ptr<character>(theC));
 		int i = 0;
@@ -179,10 +196,16 @@ public:
 		}
 	}
 };
+shared_ptr<base> redBase (new base(red));
+shared_ptr<base> blueBase (new base(blue));
 class dragon : public character{
 public:
-    dragon(){
+    dragon(color f, int no){
         TYPE = Dragon ;
+        belong = f;
+        elements = allElements[Dragon];
+        force = allForce[Dragon];
+        No = no;
     }
     void getHurt(c_ptr from, attackType t) {
     	if(elements <= from -> force)
@@ -192,7 +215,6 @@ public:
         else if(t == subAttack){
 			fight(from, fightBack);
 		}
-
     };
     void move() {
 
@@ -224,21 +246,25 @@ public:
              << " was killed in city " << Pos->no << std::endl;
         Pos -> remove(c_ptr(this));
     }
+    ~dragon(){std::cout << this <<" was deleted from RAM!\n";}
 };
 
 
 int main(){
-    city T;
-    InnerTimer.addTime(100000);
-    c_ptr a = c_ptr(new dragon), b = c_ptr(new dragon);
+    M = 100;
+    allForce[Dragon] = 10;
+    allElements[Dragon] = 5;
+    city T(1);
+    InnerTimer.addTime(1000);
+    c_ptr a = c_ptr(new dragon(red, 0)), b = c_ptr(new dragon(blue, 0)), c = c_ptr(new dragon(blue, 1)), d = c_ptr(new dragon(red, 1));
+    std::cout << std::setw(10) << a << std::setw(10) << b  << std::setw(10) << c  << std::setw(10) << d <<std::endl;
     T.recieve(a);
     T.recieve(b);
-    T.recordWining(a);
-    T.recordWining(a);
-    base R;
-    R.flag = red;
+    T.recieve(c);
     a -> fight(b, subAttack);
-	R.recieve(a);
-    R.recieve(b);
-
+    d -> fight(c, subAttack);
+	blueBase->recieve(a);
+    blueBase->recieve(d);
+    a -> debug();
+    b -> debug();
 }
